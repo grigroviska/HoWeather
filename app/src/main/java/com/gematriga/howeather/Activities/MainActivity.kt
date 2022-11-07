@@ -2,13 +2,13 @@ package com.gematriga.howeather.Activities
 
 import android.Manifest
 import android.content.Context
-import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.location.Location
 import android.location.LocationManager
 import android.os.Build
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.Settings
 import android.view.View
@@ -17,8 +17,10 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.databinding.DataBindingUtil
 import com.gematriga.howeather.Models.WeatherModel
 import com.gematriga.howeather.R
@@ -29,12 +31,15 @@ import com.google.android.gms.location.LocationServices
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import java.io.File
+import java.io.FileOutputStream
 import java.math.RoundingMode
 import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.ZoneId
-import java.util.Date
+import java.util.*
 import kotlin.math.roundToInt
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -43,6 +48,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var fusedLocationProvider : FusedLocationProviderClient
     private val LOCATION_REQUEST_CODE = 101
     private val apiKey= "f4ff72e3cb789658ce71efa591b539c6"
+    var cbName : String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,6 +58,14 @@ class MainActivity : AppCompatActivity() {
 
         fusedLocationProvider = LocationServices.getFusedLocationProviderClient(this)
         showDialog()
+
+        var cName = binding.citySearch.text.toString()
+
+        if(cName.isEmpty()){
+
+            getCityWeather("istanbul")
+
+        }
 
         binding.citySearch.setOnEditorActionListener { textView, i, keyEvent ->
             if (i== EditorInfo.IME_ACTION_SEARCH){
@@ -82,6 +96,13 @@ class MainActivity : AppCompatActivity() {
             getCurrentLocation()
 
         }
+
+        binding.shareHoweather.setOnClickListener {
+
+            captureScreenShot()
+
+        }
+
     }
 
     private fun showDialog(){
@@ -105,41 +126,40 @@ class MainActivity : AppCompatActivity() {
         binding.progressBar.visibility = View.VISIBLE
 
         ApiUtilities.getApiInterface()?.getCityWeatherData(city,apiKey)?.enqueue(
-            object : Callback<WeatherModel>{
-                @RequiresApi(Build.VERSION_CODES.O)
-                override fun onResponse(
-                    call: Call<WeatherModel>,
-                    response: Response<WeatherModel>
-                ) {
+                object : Callback<WeatherModel>{
+                    @RequiresApi(Build.VERSION_CODES.O)
+                    override fun onResponse(
+                        call: Call<WeatherModel>,
+                        response: Response<WeatherModel>
+                    ) {
 
-                    if(response.isSuccessful){
+                        if(response.isSuccessful){
 
-                        binding.progressBar.visibility = View.GONE
+                            binding.progressBar.visibility = View.GONE
 
-                        response.body()?.let {
+                            response.body()?.let {
 
-                            setData(it)
+                                setData(it)
+
+                            }
+
+                        }else{
+
+                            Toast.makeText(this@MainActivity,"No City Found", Toast.LENGTH_LONG).show()
+                            binding.progressBar.visibility = View.GONE
 
                         }
 
-                    }else{
+                    }
 
-                        Toast.makeText(this@MainActivity,"No City Found", Toast.LENGTH_LONG).show()
-                        binding.progressBar.visibility = View.GONE
+                    override fun onFailure(call: Call<WeatherModel>, t: Throwable) {
+
+
 
                     }
 
                 }
-
-                override fun onFailure(call: Call<WeatherModel>, t: Throwable) {
-
-
-
-                }
-
-            }
-        )
-
+            )
     }
 
     private fun fetchCurrentLocationWeather(latitude : String, longitude : String){
@@ -335,6 +355,8 @@ class MainActivity : AppCompatActivity() {
 
             citySearch.setText(body.name)
 
+            cbName = citySearch.text.toString()
+
             feelsLike.text = "" + k2c(body?.main?.feels_like!!) + "°"
 
             windValue.text = body.wind.speed.toString() + "m/s"
@@ -348,6 +370,47 @@ class MainActivity : AppCompatActivity() {
         }
 
         updateUI(body.weather[0].id)
+
+    }
+
+
+    private fun captureScreenShot() {
+
+        try{
+
+            val now = Date()
+            android.text.format.DateFormat.format("dd/MM/YYYY hh:mm", now)
+
+            val path = getExternalFilesDir(null)!!.absolutePath + "/" + ".jpg"
+
+            val bitmap = Bitmap.createBitmap(
+                binding.mainLayout.width,
+                binding.mainLayout.height,
+                Bitmap.Config.ARGB_8888
+            )
+            val canvas = Canvas(bitmap)
+            binding.mainLayout.draw(canvas)
+            val imageFile = File(path)
+            val outputStream = FileOutputStream(imageFile)
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
+            outputStream.flush()
+            outputStream.close()
+
+            val URI =
+                FileProvider.getUriForFile(applicationContext, "com.gematriga.howeather.provider", imageFile)
+
+            val intent = Intent()
+            intent.action = Intent.ACTION_SEND
+            intent.putExtra(Intent.EXTRA_TEXT, "Weather in $cbName" + "\n" + "($now)" + "\n"  + "HoWeather")
+            intent.putExtra(Intent.EXTRA_STREAM, URI)
+            intent.type = "text/plain"
+            startActivity(intent)
+        }catch (e: Exception){
+
+            Toast.makeText(this@MainActivity,e.localizedMessage,Toast.LENGTH_LONG).show()
+
+        }
+
 
     }
 
