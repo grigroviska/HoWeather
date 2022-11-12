@@ -3,6 +3,7 @@ package com.gematriga.howeather.Activities
 import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -49,23 +50,35 @@ class MainActivity : AppCompatActivity() {
     private val LOCATION_REQUEST_CODE = 101
     private val apiKey= "f4ff72e3cb789658ce71efa591b539c6"
     var cbName : String? = null
+    var cCity : String? = null
+    lateinit var sharedPreferences: SharedPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
-
         fusedLocationProvider = LocationServices.getFusedLocationProviderClient(this)
-        showDialog()
+        cbName = binding.citySearch.text.toString()
+        sharedPreferences = this.getSharedPreferences("com.gematriga.howeather", Context.MODE_PRIVATE)
 
-        var cName = binding.citySearch.text.toString()
+        cCity = sharedPreferences.getString("city", "")
 
-        if(cName.isEmpty()){
+        if (cCity == ""){
 
             getCityWeather("istanbul")
 
+            showDialog()
+
+        }else{
+
+            fusedLocationProvider = LocationServices.getFusedLocationProviderClient(this)
+            getCurrentLocation()
+            //getCityWeather(cCity.toString())
+
         }
+
+
 
         binding.citySearch.setOnEditorActionListener { textView, i, keyEvent ->
             if (i== EditorInfo.IME_ACTION_SEARCH){
@@ -108,14 +121,14 @@ class MainActivity : AppCompatActivity() {
     private fun showDialog(){
 
         val builder : AlertDialog.Builder = AlertDialog.Builder(this@MainActivity)
-        builder.setTitle("Location Need")
-        builder.setMessage("Bana konumun lazım")
+        builder.setTitle("Location")
+        builder.setMessage("Your location is required")
         builder.setPositiveButton(android.R.string.yes) { dialog, which ->
             getCurrentLocation()
         }
 
         builder.setNegativeButton(android.R.string.no) { dialog, which ->
-            Toast.makeText(this@MainActivity, "Konumun gerekliydi ama kendinde aratabilirsin güvenmediysen",Toast.LENGTH_LONG).show()
+            Toast.makeText(this@MainActivity, "Your location was necessary, but if you don't trust it, you can call it yourself.",Toast.LENGTH_LONG).show()
         }
         builder.show()
 
@@ -126,40 +139,40 @@ class MainActivity : AppCompatActivity() {
         binding.progressBar.visibility = View.VISIBLE
 
         ApiUtilities.getApiInterface()?.getCityWeatherData(city,apiKey)?.enqueue(
-                object : Callback<WeatherModel>{
-                    @RequiresApi(Build.VERSION_CODES.O)
-                    override fun onResponse(
-                        call: Call<WeatherModel>,
-                        response: Response<WeatherModel>
-                    ) {
+            object : Callback<WeatherModel>{
+                @RequiresApi(Build.VERSION_CODES.O)
+                override fun onResponse(
+                    call: Call<WeatherModel>,
+                    response: Response<WeatherModel>
+                ) {
 
-                        if(response.isSuccessful){
+                    if(response.isSuccessful){
 
-                            binding.progressBar.visibility = View.GONE
+                        binding.progressBar.visibility = View.GONE
 
-                            response.body()?.let {
+                        response.body()?.let {
 
-                                setData(it)
-
-                            }
-
-                        }else{
-
-                            Toast.makeText(this@MainActivity,"No City Found", Toast.LENGTH_LONG).show()
-                            binding.progressBar.visibility = View.GONE
+                            setData(it)
 
                         }
 
-                    }
+                    }else{
 
-                    override fun onFailure(call: Call<WeatherModel>, t: Throwable) {
-
-
+                        Toast.makeText(this@MainActivity,"No City Found", Toast.LENGTH_LONG).show()
+                        binding.progressBar.visibility = View.GONE
 
                     }
 
                 }
-            )
+
+                override fun onFailure(call: Call<WeatherModel>, t: Throwable) {
+
+
+
+                }
+
+            }
+        )
     }
 
     private fun fetchCurrentLocationWeather(latitude : String, longitude : String){
@@ -179,6 +192,8 @@ class MainActivity : AppCompatActivity() {
                         response.body()?.let {
 
                             setData(it)
+
+                            //sharedPreferences.edit().putString("city", cbName).apply()
 
                         }
 
@@ -206,10 +221,10 @@ class MainActivity : AppCompatActivity() {
                         this,
                         Manifest.permission.ACCESS_FINE_LOCATION
 
-                )!=PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                    )!=PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
                         this,
                         Manifest.permission.ACCESS_COARSE_LOCATION
-                )!= PackageManager.PERMISSION_GRANTED
+                    )!= PackageManager.PERMISSION_GRANTED
                 ){
 
                     requestPermissions()
@@ -220,22 +235,24 @@ class MainActivity : AppCompatActivity() {
 
                 fusedLocationProvider.lastLocation.addOnSuccessListener {
 
-                    location ->
+                        location ->
 
                     if (location!= null){
 
                         currentLocation = location
 
                         binding.progressBar.visibility = View.VISIBLE
-
                         fetchCurrentLocationWeather(
 
                             location.latitude.toString(),
                             location.longitude.toString()
 
+
                         )
 
+
                     }
+
 
                 }
 
@@ -265,7 +282,7 @@ class MainActivity : AppCompatActivity() {
 
             this,
             arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION,
-            Manifest.permission.ACCESS_FINE_LOCATION),
+                Manifest.permission.ACCESS_FINE_LOCATION),
             LOCATION_REQUEST_CODE
 
         )
@@ -287,16 +304,16 @@ class MainActivity : AppCompatActivity() {
         if (ActivityCompat.checkSelfPermission(
                 this,
                 Manifest.permission.ACCESS_COARSE_LOCATION
-        )==PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+            )==PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
 
                 this,
                 Manifest.permission.ACCESS_FINE_LOCATION
 
-        )== PackageManager.PERMISSION_GRANTED){
+            )== PackageManager.PERMISSION_GRANTED){
 
-                return true
+            return true
 
-            }
+        }
 
         return false
 
