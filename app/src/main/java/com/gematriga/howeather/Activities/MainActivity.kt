@@ -74,7 +74,7 @@ class MainActivity : AppCompatActivity() {
 
             fusedLocationProvider = LocationServices.getFusedLocationProviderClient(this)
             getCurrentLocation()
-            //getCityWeather(cCity.toString())
+           
 
         }
 
