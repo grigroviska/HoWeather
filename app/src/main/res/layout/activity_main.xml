@@ -20,6 +20,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="10dp"
         android:gravity="center"
         android:orientation="horizontal">
 
@@ -31,7 +32,7 @@
             android:fontFamily="@font/thebadfonts"
             android:text="HoWeather"
             android:textSize="50sp"
-            android:layout_marginStart="10dp"
+            android:layout_marginStart="20dp"
             android:layout_marginTop="5dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
@@ -48,7 +49,7 @@
             android:focusable="true"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_goneMarginEnd="10dp"
+            app:layout_goneMarginEnd="20dp"
             android:layout_marginTop="5dp"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
@@ -183,7 +184,7 @@
                     android:layout_height="60dp"
                     android:layout_weight="1"
                     android:hint="Search Here"
-                    android:fontFamily="@font/citylight"
+                    android:fontFamily="@font/morely"
                     android:textStyle="bold"
                     android:textSize="20sp"
                     android:cursorVisible="false"
@@ -635,6 +636,7 @@
         android:layout_height="wrap_content"
         android:text="Send the HoWeather"
         android:textColor="@color/white"
+        android:layout_marginBottom="10dp"
         android:textSize="15sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
