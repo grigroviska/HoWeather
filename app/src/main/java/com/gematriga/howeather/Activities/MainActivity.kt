@@ -60,8 +60,6 @@ class MainActivity : AppCompatActivity() {
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
         fusedLocationProvider = LocationServices.getFusedLocationProviderClient(this)
         cbName = binding.citySearch.text.toString()
-
-        //If the user is logging in for the first time, the app will show Istanbul by default
         sharedPreferences = this.getSharedPreferences("com.gematriga.howeather", Context.MODE_PRIVATE)
 
         cCity = sharedPreferences.getString("city", "")
@@ -76,6 +74,7 @@ class MainActivity : AppCompatActivity() {
 
             fusedLocationProvider = LocationServices.getFusedLocationProviderClient(this)
             getCurrentLocation()
+            //getCityWeather(cCity.toString())
 
         }
 
@@ -110,7 +109,7 @@ class MainActivity : AppCompatActivity() {
             getCurrentLocation()
 
         }
-        //The ability to share the screen the user sees with other applications
+
         binding.shareHoweather.setOnClickListener {
 
             captureScreenShot()
@@ -118,7 +117,7 @@ class MainActivity : AppCompatActivity() {
         }
 
     }
-    //Requesting a location permit and taking action accordingly
+
     private fun showDialog(){
 
         val builder : AlertDialog.Builder = AlertDialog.Builder(this@MainActivity)
@@ -193,6 +192,8 @@ class MainActivity : AppCompatActivity() {
                         response.body()?.let {
 
                             setData(it)
+
+                            //sharedPreferences.edit().putString("city", cbName).apply()
 
                         }
 
@@ -274,7 +275,7 @@ class MainActivity : AppCompatActivity() {
         }
 
     }
-    //Requesting a location permit and taking action accordingly
+
     private fun requestPermissions(){
 
         ActivityCompat.requestPermissions(
@@ -340,7 +341,7 @@ class MainActivity : AppCompatActivity() {
         }
 
     }
-    //Change the data pulled from the API to the desired values
+
     @RequiresApi(Build.VERSION_CODES.O)
     private fun setData(body: WeatherModel){
 
@@ -429,7 +430,7 @@ class MainActivity : AppCompatActivity() {
 
 
     }
-    //Changing the background according to the air rating
+
     private fun updateUI(id: Int) {
 
         binding.apply {
